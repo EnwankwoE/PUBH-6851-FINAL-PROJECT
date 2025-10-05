@@ -1,0 +1,276 @@
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(ggstatsplot)
+library(vcd)
+library(ggmosaic)
+library(readr)
+library(psych)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(plotly)
+library(ggstatsplot)
+library(vcd)
+library(epitools)
+library(lmtest)
+library(readxl)
+
+```
+
+
+
+INTRODUCTION
+This report presents a preliminary statistical analysis of the "ProjectData" dataset, a compilation of physiological, demographic, and outcome measures. The dataset comprises eight variables, including key health metrics like Age, Weight, Systolic Blood Pressure (sBP), and the inflammation marker C-Reactive Protein (CRP).  The data Group I and II and SideEffects (Yes/No). Finally, the inclusion of a numeric Survey score and a continuous Difference variable.
+
+The primary objective of this investigation is twofold: first, to establish comprehensive descriptive statistics for some variables, providing an understanding of the sample population's characteristics; and second, to employ inferential statistical methods to determine the existence and nature of relationships among these variables.
+
+```{r}
+library(data.table)
+```
+
+
+```{r}
+setwd(getwd())
+```
+
+ 
+
+```{r}
+dfr <- data.table::fread("ProjectData.csv")
+```
+
+
+```{r}
+dim(dfr)
+```
+the dimensions tell us that there are 8 variables and 500 obeservations per variable, this is also explained by the ncol and the nrow functions below.
+
+```{r}
+nrow(dfr)
+```
+```{r}
+ncol(dfr)
+```
+
+
+```{r}
+str(dfr)
+```
+this functions above illustrates in detail, the variables as stated in the introduction, with difference, CRP, sBP, weight as numerical variables,while Group and side effects have character variables.
+
+```{r}
+head(dfr)
+```
+this prints out the first 6 variables
+
+
+```{r}
+mean(dfr$Age)
+```
+The mean age of the participants(Observations) in this dataset is 58.34 years.
+
+```{r}
+sd(dfr$Age)
+```
+the ages in this dataset vary, on average about 11.7 years from the mean age
+```{r}
+mean(dfr$Weight)
+```
+the mean weight of the observations is 172.3 pounds
+```{r}
+median(dfr$Age)
+```
+the median age is 56 years.
+
+
+
+
+
+```{r}
+table(dfr$SideEffect)
+```
+the table above tells us that the 289 people experienced no side effects and 211 had side effects. 
+
+
+
+
+
+```{r}
+hist(
+  dfr$Age,
+  main = "Age distribution",
+  xlab = "Age[years]",
+  ylab = "count",
+  xlim = c(30,90),
+  ylim = c(0, 100),
+  breaks = seq(from = 30, to = 90, by = 5)
+ )
+```
+The histogram above shows the frequency of the ages. looking at the graph, we can see that most individuals in the sample are between 50 and 60 years old,  The distribution appears roughly symmetric, suggesting a balanced spread of ages around the central range. There are fewer individuals at the younger (30s–40s) and older (70s–90s) ends, indicating that middle-aged adults are more in the population.
+
+```{r}
+dfr %>% ggplot2::ggplot(
+  aes(
+    x = SideEffects,
+    fill = SideEffects,
+    y = Age
+  )
+) +
+  geom_boxplot()  +
+  labs(
+    title = "Age distribution of participants",
+    subtitle = "Grouped by side effects"
+  ) +
+  ggthemes::theme_economist()
+```
+The boxplot above shows that participants who experienced side effects tend to be older than those who did not. Specifically:
+- The median age for those with side effectsis around 60, compared to about 55 for those without.
+- The group with side effects has a wider interquartile range  over the group without side effects.
+
+
+
+```{r}
+dfr %>% ggplot2::ggplot(
+  aes(
+    x = Age,
+    y = CRP
+  )
+) +
+  geom_point(
+    shape = 1,
+    size = 3,
+  ) +
+  labs(
+    title = "Age vs. CRP level",
+    subtitle = "Includes all participants"
+  ) +
+  ggthemes::theme_economist()
+```
+This scatter plot shows the relationship between age and CRP levels among all participants. The data points are widely spread across both axes, indicating that there is no clear linear trend—CRP levels vary across ages without a consistent increase or decrease. This suggests that age alone may not strongly predict CRP levels in this sample, and other factors might be influencing inflammation markers.
+
+
+```{r}
+dfr %>% ggplot2::ggplot(
+  aes(
+    x = Age,
+    y = CRP
+  )
+) +
+  geom_point(
+    aes(
+      color = SideEffects,
+      shape = SideEffects
+    ),
+    size = 3,
+  ) +
+  labs(
+    title = "Age vs. CRP level",
+    subtitle = "Grouped by side effects "
+  ) +
+  ggthemes::theme_economist()
+```
+This scatter plot compares CRP levels across ages, grouped by side effect status. Participants who experienced side effects (blue triangles) tend to be older and show slightly higher CRP levels overall, while those without side effects (red circles) are more spread out across ages and CRP values. Although there's visible overlap, the clustering suggests a possible link between older age, elevated CRP, and side effect occurrence—worth exploring further with other analyses.
+
+```{r}
+ggstatsplot::ggscatterstats(
+  dfr,
+  Age,
+  CRP,
+  bf.message = F
+)
+```
+This plot assesses the correlation between age and CRP levels: The Pearson correlation coefficient is –0.09- this means there no correlation, and the p-value of 0.06 suggests marginal evidence against the null hypothesis—just above the conventional 0.05 threshold. The confidence interval includes zero, reinforcing that the association may be due to chance. Overall, age does not appear to be a strong predictor of CRP in this sample of 500 participants.
+
+
+```{r}
+psych::describe(dfr$Age)
+```
+the table above gives a summary of the statistics of age
+number of observations= 500
+mean- 58.38
+median- 57
+trimmed-Mean after trimming extreme values- 57.77
+MAD(Median Absolute Deviation)- 11.86
+MINIMUM VALUE- 38
+MAXIMUM VALUE- 85
+RANGE- 47
+skewness- -0.42
+kurtosis- tailedness- 0.7- light tailed
+standard error- 0.52
+
+DESCRIPTIVE STARTS BY GROUP
+The tables below  analyzes the variable age by side effects 
+and the summary statistics of both character variables, we can see that the mean and median ages of those with side effects are higher than those without. 
+```{r}
+psych::describeBy(
+  dfr$Age,
+  group = dfr$SideEffects
+)
+```
+
+
+
+
+
+here we test if there is a difference in the numerical variable between those with and without side effects?
+first we determine the SD  of both.
+
+```{r}
+dfr %>% group_by(SideEffects) %>% 
+  summarize(
+    Average = mean(Age),
+    StandardDeviation = sd(Age)
+  )
+```
+then we conduct the Shapiro.wilk test to determine if Age is from a population in which the values are normally distributed
+
+```{r}
+dfr %>% 
+  filter(SideEffects == "No") %>% 
+  select(Age) %>% 
+  pull() %>% 
+  shapiro.test()
+```
+p value is less than 0.05, we will reject the null hypothesis and state this variable is not normally distributed for those with no side effects
+
+```{r}
+dfr %>% 
+  filter(SideEffects == "Yes") %>% 
+  select(Age) %>% 
+  pull() %>% 
+  shapiro.test()
+```
+
+the pvalue is also less than 0.05, so we can reject the null hypothesis and state that the age is not normally distributed in those with side effects
+
+
+
+
+Is there correlation between age and CRP values?
+
+```{r}
+dfr %>% 
+  summarize(
+    Average_age = mean(Age),
+    Average_CRP = mean(CRP)
+  )
+```
+
+
+```{r}
+AgeCRP <- lm(
+  CRP ~ Age,
+  data = dfr
+)
+
+summary(AgeCRP)
+```
+the estimate B1-  -0.0074, this means that for every increase in age, there will be an decrease in the CRP  by 0.0074. the R2( Coeffeicent of determination) is 0.0052, this means that the regression model explains only 0.5% of the change in CRP.
+P.value here is signifiantly less than 0.05, so we can conclude that there is not enough evidence to show that there is a linear association between age and CRP value.
+
+
+
+
